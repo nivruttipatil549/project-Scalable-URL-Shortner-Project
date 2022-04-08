@@ -38,9 +38,7 @@ const urlshorten = async function (req, res) {
   try {
     const longUrl = req.body.longUrl;
     if (!isValidRequestBody(req.body)) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "you can't send empty body" });
+      return res.status(400).send({ status: false, msg: "you can't send empty body" });
     }
     if (!isvalidStringOnly(longUrl)) {
       return res.status(400).send({ status: false, msg: "please give link" });
@@ -54,22 +52,22 @@ const urlshorten = async function (req, res) {
 
     if (validUrl.isUri(longUrl)) {
       let cachedData = await GET_ASYNC(`${longUrl}`);
-      console.log(cachedData)
+      //console.log(cachedData)
       if (cachedData) {
-        const data=JSON.parse(cachedData)
+        const data = JSON.parse(cachedData)
 
-        return res.status(200).send({ status: true,msg:"already created", data:data});
+        return res.status(200).send({ status: true, msg: "already created", data: data });
       }
-    
+
       let url = await urlModel.findOne({ longUrl }).select({ _id: 0, __v: 0 });
 
-      
+
 
       if (url) {
-        return res.status(200).send({ status: true, data:JSON.parse(url) });
+        return res.status(200).send({ status: true, data: JSON.parse(url) });
       } else {
         const shortUrl = baseUrl + "/" + urlCode;
-        await SET_ASYNC(`${longUrl}`, JSON.stringify({longUrl,shortUrl,urlCode}));
+        await SET_ASYNC(`${longUrl}`, JSON.stringify({ longUrl, shortUrl, urlCode }));
 
         url = await urlModel.create({
           longUrl,
@@ -101,26 +99,27 @@ let geturl = async function (req, res) {
       return res.status(400).send({ status: false, msg: "not valid urlCode" });
     }
     let cachedData = await GET_ASYNC(`${urlCode}`);
-
-if(cachedData){
-    const data=JSON.parse(cachedData)
     
-    return res.status(302).redirect(data.longUrl)}
+    if (cachedData) {
+      const data = JSON.parse(cachedData)
 
-    else{
-         let fetchUrl = await urlModel
-      .findOne({ urlCode })
-      
-
-await SET_ASYNC(`${urlCode}`,JSON.stringify(fetchUrl))
-
-if(fetchUrl){return res.status(302).redirect(fetchUrl.longUrl)}
+      return res.status(302).redirect(data.longUrl)
+    }
 
     else {
-      return res
-        .status(404)
-        .send({ status: false, msg: " this urlCode not found" });
-    }}
+      let fetchUrl = await urlModel.findOne({ urlCode })
+
+
+      await SET_ASYNC(`${urlCode}`, JSON.stringify(fetchUrl))
+
+      if (fetchUrl) {
+        return res.status(302).redirect(fetchUrl.longUrl)
+      }
+
+      else {
+        return res.status(404).send({ status: false, msg: " this urlCode not found" });
+      }
+    }
 
 
   } catch (err) {
